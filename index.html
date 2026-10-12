@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>El 31 - Baraja Española</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- SDK OFICIAL DE MONETAG -->
+  <script src='//libtl.com/sdk.js' data-zone='12015566' data-sdk='show_12015566'></script>
+  <style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html, body { height:100%; overflow:hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body {
+    background: radial-gradient(ellipse at center, #1a5d2e 0%, #0d3a1c 70%, #062010 100%);
+    color:#fff;
+    display:flex; flex-direction:column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #app { flex:1; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  .hidden { display:none !important; }
+  .title {
+    font-size: 48px; font-weight:900;
+    background: linear-gradient(180deg,#ffd700,#ff8c00);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow: 0 2px 20px rgba(255,215,0,0.3);
+    margin-bottom: 8px;
+  }
+  .subtitle { color:#cfe8d6; margin-bottom:30px; text-align:center; font-size:14px; max-width:320px; line-height:1.5; }
+  .panel {
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%; max-width: 360px;
+  }
+  .label { font-size:13px; color:#a8d4b4; margin-bottom:10px; text-align:center; }
+  .player-selector { display:flex; gap:8px; justify-content:center; margin-bottom:20px; flex-wrap:wrap; }
+  .player-btn {
+    width:48px; height:48px; border-radius:12px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    color:#fff; font-size:20px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition: all .2s;
+  }
+  .player-btn.active {
+    background: linear-gradient(135deg,#ffd700,#ff8c00);
+    border-color:#fff;
+    box-shadow: 0 4px 15px rgba(255,215,0,0.5);
+    transform: scale(1.05);
+  }
+  .lives-selector { display:flex; gap:8px; justify-content:center; margin-bottom:20px; }
+  .btn {
+    width:100%; padding:14px;
+    border:none; border-radius:12px;
+    background: linear-gradient(135deg,#ffd700,#ff8c00);
+    color:#1a1a1a; font-weight:800; font-size:16px;
+    cursor:pointer; transition: all .2s;
+    box-shadow: 0 4px 15px rgba(255,140,0,0.4);
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn.secondary { background: rgba(255,255,255,0.1); color:#fff; box-shadow:none; border:1px solid rgba(255,255,255,0.2); }
+
+  #gameScreen { justify-content:space-between; padding:8px; }
+  .top-bar {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 12px;
+    font-size:12px;
+    width:100%;
+  }
+  .my-info { display:flex; align-items:center; gap:8px; }
+  .my-lives { display:flex; gap:3px; }
+  .heart { font-size:16px; filter: drop-shadow(0 0 3px #ff3366); }
+  .heart.lost { opacity:0.2; filter:none; }
+
+  .opponents {
+    display:flex; justify-content:center; gap:8px;
+    padding: 6px 0;
+    flex-wrap: wrap;
+  }
+  .opponent {
+    display:flex; flex-direction:column; align-items:center;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    min-width: 70px;
+    position:relative;
+    transition: all .3s;
+  }
+  .opponent.active {
+    background: rgba(255,215,0,0.25);
+    box-shadow: 0 0 15px rgba(255,215,0,0.5);
+  }
+  .opponent.eliminated { opacity:0.3; }
+  .opponent .name { font-size:11px; font-weight:700; margin-bottom:2px; }
+  .opponent .cards-count { font-size:10px; color:#cfe8d6; }
+  .opponent .lives-mini { display:flex; gap:1px; margin-top:3px; }
+  .opponent .lives-mini .heart { font-size:10px; }
+  .opponent .badge {
+    position:absolute; top:-6px; right:-6px;
+    background:#ff3366; color:#fff;
+    font-size:9px; font-weight:800;
+    padding:2px 5px; border-radius:8px;
+  }
+
+  .table-center {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    gap: 20px;
+    position:relative;
+    min-height: 130px;
+  }
+  .pile {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .pile-label { font-size:10px; color:#a8d4b4; text-transform:uppercase; letter-spacing:1px; }
+  .pile-stack {
+    width: 75px; height: 105px;
+    position:relative;
+    cursor:pointer;
+  }
+  .pile-stack.deck {
+    background: linear-gradient(135deg,#8b0000,#4a0000);
+    border: 2px solid #ffd700;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.3);
+    display:flex; align-items:center; justify-content:center;
+    color:#ffd700; font-size:24px; font-weight:900;
+  }
+  .pile-stack.deck::before {
+    content:""; position:absolute; inset:6px;
+    border:1px solid rgba(255,215,0,0.4); border-radius:4px;
+  }
+  .pile-stack.empty {
+    border: 2px dashed rgba(255,255,255,0.2);
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    color: rgba(255,255,255,0.3); font-size:10px;
+  }
+  .pile-stack.clickable { animation: pulse 1.5s infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 4px 10px rgba(0,0,0,0.5), 0 0 0 0 rgba(255,215,0,0.5); }
+    50% { box-shadow: 0 4px 10px rgba(0,0,0,0.5), 0 0 0 10px rgba(255,215,0,0); }
+  }
+
+  .status-msg {
+    position:absolute;
+    top: 50%; left:50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.85);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size:13px; font-weight:600;
+    white-space: nowrap;
+    pointer-events:none;
+    z-index: 10;
+    border: 1px solid rgba(255,215,0,0.3);
+  }
+
+  .my-area {
+    width:100%;
+    display:flex; flex-direction:column; align-items:center;
+    gap: 8px;
+  }
+  .my-hand {
+    display:flex; justify-content:center;
+    gap: 6px;
+    padding: 4px;
+  }
+  .actions {
+    display:flex; gap:6px; width:100%; max-width:400px;
+    padding: 0 8px;
+  }
+  .action-btn {
+    flex:1; padding:10px 6px;
+    border:none; border-radius:10px;
+    font-weight:700; font-size:12px;
+    cursor:pointer;
+    transition: all .2s;
+    color:#fff;
+  }
+  .action-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .action-btn.draw { background: linear-gradient(135deg,#2196f3,#1976d2); }
+  .action-btn.take { background: linear-gradient(135deg,#ff9800,#f57c00); }
+  .action-btn.knock { background: linear-gradient(135deg,#9c27b0,#7b1fa2); }
+  .action-btn.thirtyone { background: linear-gradient(135deg,#ffd700,#ff8c00); color:#1a1a1a; }
+
+  .card {
+    width: 70px; height: 100px;
+    background: linear-gradient(180deg,#fffef5,#f0e8d0);
+    border: 1px solid #8b7355;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    display:flex; flex-direction:column;
+    padding: 4px 6px;
+    position:relative;
+    cursor:pointer;
+    transition: transform .2s, box-shadow .2s;
+    color:#222;
+    font-weight:700;
+  }
+  .card.small { width:42px; height:60px; font-size:10px; padding:3px 4px; }
+  .card .top { display:flex; flex-direction:column; align-items:flex-start; font-size:14px; line-height:1; }
+  .card.small .top { font-size:10px; }
+  .card .center {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    font-size: 32px;
+  }
+  .card.small .center { font-size:18px; }
+  .card .bottom { display:flex; flex-direction:column; align-items:flex-end; font-size:14px; line-height:1; transform: rotate(180deg); }
+  .card.small .bottom { font-size:10px; }
+  .card.oro { color:#c8960c; }
+  .card.copa { color:#c0392b; }
+  .card.espada { color:#2c3e50; }
+  .card.basto { color:#1e6e3a; }
+
+  .card.selected {
+    transform: translateY(-15px);
+    box-shadow: 0 8px 20px rgba(255,215,0,0.6);
+    border-color:#ffd700;
+    border-width:2px;
+  }
+  .card.new { animation: cardIn .4s ease-out; }
+  @keyframes cardIn {
+    from { transform: scale(0.5) translateY(-30px); opacity:0; }
+    to { transform: scale(1) translateY(0); opacity:1; }
+  }
+
+  .modal-overlay {
+    position:absolute; inset:0;
+    background: rgba(0,0,0,0.8);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal {
+    background: linear-gradient(180deg,#1e3a28,#0d2418);
+    border: 2px solid rgba(255,215,0,0.4);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 340px; width:100%;
+    text-align:center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+  .modal h2 { font-size:22px; margin-bottom:10px; color:#ffd700; }
+  .modal p { font-size:14px; color:#cfe8d6; margin-bottom:18px; line-height:1.5; }
+  .modal .btn { margin-top:8px; }
+  .result-icon { font-size:60px; margin-bottom:10px; }
+
+  .toast {
+    position:absolute;
+    top: 50%; left:50%;
+    transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.9);
+    color:#ffd700;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-weight:700; font-size:15px;
+    z-index: 50;
+    border: 2px solid #ffd700;
+    animation: toastIn .4s ease-out;
+    text-align:center;
+    max-width: 90%;
+  }
+  @keyframes toastIn {
+    from { transform: translate(-50%,-50%) scale(0.5); opacity:0; }
+    to { transform: translate(-50%,-50%) scale(1); opacity:1; }
+  }
+
+  .score-display {
+    font-size: 11px;
+    color: #ffd700;
+    background: rgba(0,0,0,0.5);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <div id="startScreen" class="screen">
+    <div class="title">EL 31</div>
+    <div class="subtitle">
+      El clásico juego de la baraja española.<br>
+      Suma 31 puntos del mismo palo o acércate lo más posible. ¡Cuida tus vidas!
+    </div>
+    <div class="panel">
+      <div class="label">¿Cuántos jugadores en la mesa?</div>
+      <div class="player-selector" id="playerSelector"></div>
+      <div class="label">¿Cuántas vidas iniciales?</div>
+      <div class="lives-selector" id="livesSelector"></div>
+      <button class="btn" id="startBtn">🎴 COMENZAR PARTIDA</button>
+    </div>
+  </div>
+
+  <div id="gameScreen" class="screen hidden">
+    <div class="top-bar">
+      <div class="my-info">
+        <span style="font-weight:700;" id="myName">Tú</span>
+        <div class="my-lives" id="myLives"></div>
+      </div>
+      <div style="font-size:11px; color:#a8d4b4;">
+        Ronda <span id="roundNum">1</span>
+      </div>
+    </div>
+
+    <div class="opponents" id="opponents"></div>
+
+    <div class="table-center">
+      <div class="pile">
+        <div class="pile-label">Mazo</div>
+        <div class="pile-stack deck clickable" id="deckPile"></div>
+      </div>
+      <div id="statusMsg" class="status-msg hidden"></div>
+      <div class="pile">
+        <div class="pile-label">Descarte</div>
+        <div class="pile-stack" id="discardPile"></div>
+      </div>
+    </div>
+
+    <div class="my-area">
+      <div class="my-hand" id="myHand"></div>
+      <div class="actions" id="actions">
+        <button class="action-btn draw" id="btnDraw">🂠 Robar</button>
+        <button class="action-btn take" id="btnTake" disabled>🂱 Tomar</button>
+        <button class="action-btn knock" id="btnKnock">✊ Tocar</button>
+        <button class="action-btn thirtyone" id="btn31" disabled>31!</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal-overlay hidden">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   EL 31 - Baraja Española con Monetag
+   ============================================================ */
+
+// ---------- Telegram WebApp ----------
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch(e){}
+}
+
+// ---------- Detectar entorno local ----------
+function isLocalhost() {
+  return window.location.hostname === 'localhost' 
+      || window.location.hostname === '127.0.0.1'
+      || window.location.protocol === 'file:';
+}
+
+// ---------- Estado global ----------
+const SUITS = ['oro','copa','espada','basto'];
+const SUIT_SYMBOL = { oro:'🟡', copa:'🏆', espada:'⚔️', basto:'' };
+const SUIT_NAME = { oro:'Oros', copa:'Copas', espada:'Espadas', basto:'Bastos' };
+const RANK_NAMES = {1:'As',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',10:'Sota',11:'Caballo',12:'Rey'};
+const RANK_POINTS = {1:11, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 10:10, 11:10, 12:10};
+
+let state = {
+  numPlayers: 2,
+  startLives: 3,
+  players: [],
+  deck: [],
+  discard: [],
+  currentPlayer: 0,
+  round: 1,
+  humanIndex: 0,
+  phase: 'setup',
+  selectedCardIdx: -1,
+  pendingDraw: null,
+  knockedBy: -1,
+  lastTurnAfterKnock: 0,
+  turnCountAfterKnock: 0,
+};
+
+// ---------- Utilidades ----------
+function shuffle(arr) {
+  for (let i=arr.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function buildDeck() {
+  const d = [];
+  for (const s of SUITS) for (let r=1;r<=12;r++) {
+    if (r===8||r===9) continue;
+    d.push({ suit:s, rank:r });
+  }
+  return shuffle(d);
+}
+
+function cardValue(c) { return RANK_POINTS[c.rank]; }
+function cardLabel(c) { return RANK_NAMES[c.rank]; }
+
+function handScore(hand) {
+  if (hand.length === 3) {
+    const r = hand[0].rank;
+    if (hand.every(c => c.rank === r)) {
+      return { score: 30.5, suit: 'trio', label: `Trío de ${RANK_NAMES[r]}s (30.5)` };
+    }
+  }
+  const bySuit = {};
+  for (const c of hand) {
+    bySuit[c.suit] = (bySuit[c.suit]||0) + cardValue(c);
+  }
+  let best = 0, bestSuit = null;
+  for (const s in bySuit) {
+    if (bySuit[s] > best) { best = bySuit[s]; bestSuit = s; }
+  }
+  return { score: best, suit: bestSuit, label: `${best} ${SUIT_NAME[bestSuit]||''}` };
+}
+
+function isThirtyOne(hand) {
+  return handScore(hand).score === 31;
+}
+
+// ---------- Pantalla de inicio ----------
+function renderStartScreen() {
+  const ps = document.getElementById('playerSelector');
+  ps.innerHTML = '';
+  for (let i=2;i<=6;i++) {
+    const b = document.createElement('div');
+    b.className = 'player-btn' + (i===state.numPlayers?' active':'');
+    b.textContent = i;
+    b.onclick = () => { state.numPlayers = i; renderStartScreen(); };
+    ps.appendChild(b);
+  }
+  const ls = document.getElementById('livesSelector');
+  ls.innerHTML = '';
+  for (let i=1;i<=5;i++) {
+    const b = document.createElement('div');
+    b.className = 'player-btn' + (i===state.startLives?' active':'');
+    b.textContent = i;
+    b.onclick = () => { state.startLives = i; renderStartScreen(); };
+    ls.appendChild(b);
+  }
+}
+
+document.getElementById('startBtn').onclick = () => { startGame(); };
+
+// ---------- Inicio de partida ----------
+function startGame() {
+  state.players = [];
+  const names = ['Tú','María','Carlos','Lucía','Javier','Elena','Pedro','Sofía'];
+  for (let i=0;i<state.numPlayers;i++) {
+    state.players.push({
+      name: i===0 ? 'Tú' : names[i],
+      isHuman: i===0,
+      lives: state.startLives,
+      hand: [],
+      eliminated: false,
+      knocked: false,
+    });
+  }
+  state.humanIndex = 0;
+  state.round = 1;
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('gameScreen').classList.remove('hidden');
+  startRound();
+}
+
+// ---------- Inicio de ronda ----------
+function startRound() {
+  state.deck = buildDeck();
+  state.discard = [];
+  state.knockedBy = -1;
+  state.turnCountAfterKnock = 0;
+  state.selectedCardIdx = -1;
+  state.pendingDraw = null;
+  state.phase = 'playing';
+
+  for (const p of state.players) {
+    p.hand = [];
+    p.knocked = false;
+    if (!p.eliminated) {
+      for (let i=0;i<3;i++) p.hand.push(state.deck.pop());
+    }
+  }
+  state.discard.push(state.deck.pop());
+
+  state.currentPlayer = (state.round - 1) % state.numPlayers;
+  while (state.players[state.currentPlayer].eliminated) {
+    state.currentPlayer = (state.currentPlayer + 1) % state.numPlayers;
+  }
+
+  document.getElementById('roundNum').textContent = state.round;
+  renderAll();
+  showStatus(`Ronda ${state.round} — Turno de ${state.players[state.currentPlayer].name}`);
+  setTimeout(() => {
+    hideStatus();
+    processTurn();
+  }, 1500);
+}
+
+// ---------- Render ----------
+function renderAll() {
+  renderMyLives();
+  renderOpponents();
+  renderTable();
+  renderMyHand();
+  updateActionButtons();
+}
+
+function renderMyLives() {
+  const me = state.players[state.humanIndex];
+  const c = document.getElementById('myLives');
+  c.innerHTML = '';
+  for (let i=0;i<state.startLives;i++) {
+    const h = document.createElement('span');
+    h.className = 'heart' + (i < me.lives ? '' : ' lost');
+    h.textContent = '❤';
+    c.appendChild(h);
+  }
+}
+
+function renderOpponents() {
+  const c = document.getElementById('opponents');
+  c.innerHTML = '';
+  state.players.forEach((p, i) => {
+    if (i === state.humanIndex) return;
+    const d = document.createElement('div');
+    d.className = 'opponent' + (i===state.currentPlayer?' active':'') + (p.eliminated?' eliminated':'');
+    let badge = '';
+    if (p.knocked) badge = '<div class="badge">✊ TOCÓ</div>';
+    d.innerHTML = `
+      <div class="name">${p.name}</div>
+      <div class="cards-count">${p.eliminated?'ELIMINADO':p.hand.length+' cartas'}</div>
+      <div class="lives-mini">${renderLivesMini(p.lives)}</div>
+      ${badge}
+    `;
+    c.appendChild(d);
+  });
+}
+
+function renderLivesMini(n) {
+  let s = '';
+  for (let i=0;i<state.startLives;i++) {
+    s += `<span class="heart ${i<n?'':'lost'}">❤</span>`;
+  }
+  return s;
+}
+
+function renderTable() {
+  const deck = document.getElementById('deckPile');
+  const disc = document.getElementById('discardPile');
+
+  if (state.deck.length > 0) {
+    deck.className = 'pile-stack deck' + (canDrawDeck()?' clickable':'');
+    deck.innerHTML = state.deck.length;
+  } else {
+    deck.className = 'pile-stack empty';
+    deck.innerHTML = 'Vacío';
+  }
+
+  const top = state.discard[state.discard.length-1];
+  if (top) {
+    disc.className = 'pile-stack' + (canTakeDiscard()?' clickable':'');
+    disc.innerHTML = renderCardHTML(top, false, false);
+  } else {
+    disc.className = 'pile-stack empty';
+    disc.innerHTML = 'Vacío';
+  }
+}
+
+function renderCardHTML(c, small=false, selectable=false, idx=-1) {
+  const selected = selectable && idx === state.selectedCardIdx;
+  return `
+    <div class="card ${c.suit} ${small?'small':''} ${selected?'selected':''}"
+         ${selectable?`onclick="selectCard(${idx})"`:''}>
+      <div class="top">
+        <div>${cardLabel(c)}</div>
+        <div>${SUIT_SYMBOL[c.suit]}</div>
+      </div>
+      <div class="center">${SUIT_SYMBOL[c.suit]}</div>
+      <div class="bottom">
+        <div>${cardLabel(c)}</div>
+        <div>${SUIT_SYMBOL[c.suit]}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMyHand() {
+  const c = document.getElementById('myHand');
+  const me = state.players[state.humanIndex];
+  c.innerHTML = '';
+  me.hand.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.innerHTML = renderCardHTML(card, false, isMyTurn(), i);
+    c.appendChild(div.firstElementChild);
+  });
+  const existing = document.querySelector('.score-display');
+  if (existing) existing.remove();
+  if (me.hand.length === 3) {
+    const sc = handScore(me.hand);
+    const sd = document.createElement('div');
+    sd.className = 'score-display';
+    sd.textContent = `Tu mejor jugada: ${sc.score}${sc.score===30.5?'':(' '+SUIT_NAME[sc.suit])}`;
+    document.querySelector('.my-area').insertBefore(sd, document.getElementById('actions'));
+  }
+}
+
+function updateActionButtons() {
+  const myTurn = isMyTurn();
+  const me = state.players[state.humanIndex];
+  const canDraw = myTurn && !state.pendingDraw && !me.knocked;
+  const canTake = myTurn && state.pendingDraw === 'discard' && !me.knocked;
+  const canKnock = myTurn && !state.pendingDraw && !me.knocked && state.knockedBy === -1;
+  const can31 = myTurn && !state.pendingDraw && me.hand.length===3 && isThirtyOne(me.hand);
+
+  document.getElementById('btnDraw').disabled = !canDraw;
+  document.getElementById('btnTake').disabled = !canTake;
+  document.getElementById('btnKnock').disabled = !canKnock;
+  document.getElementById('btn31').disabled = !can31;
+}
+
+function isMyTurn() {
+  return state.phase === 'playing' && state.currentPlayer === state.humanIndex && !state.players[state.humanIndex].eliminated;
+}
+
+function canDrawDeck() {
+  return isMyTurn() && !state.pendingDraw && !state.players[state.humanIndex].knocked && state.deck.length>0;
+}
+function canTakeDiscard() {
+  return isMyTurn() && !state.pendingDraw && !state.players[state.humanIndex].knocked;
+}
+
+// ---------- Status ----------
+function showStatus(msg) {
+  const s = document.getElementById('statusMsg');
+  s.textContent = msg;
+  s.classList.remove('hidden');
+}
+function hideStatus() {
+  document.getElementById('statusMsg').classList.add('hidden');
+}
+
+function showToast(msg, duration=1800) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  document.getElementById('app').appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
+
+// ---------- Eventos de clicks ----------
+document.getElementById('deckPile').onclick = () => {
+  if (!canDrawDeck()) return;
+  drawFromDeck();
+};
+document.getElementById('discardPile').onclick = () => {
+  if (!canTakeDiscard()) return;
+  takeDiscard();
+};
+
+window.selectCard = function(idx) {
+  if (!isMyTurn()) return;
+  const me = state.players[state.humanIndex];
+  if (state.pendingDraw) {
+    discardSelected(idx);
+  } else {
+    state.selectedCardIdx = (state.selectedCardIdx === idx) ? -1 : idx;
+    renderMyHand();
+  }
+};
+
+document.getElementById('btnDraw').onclick = () => drawFromDeck();
+document.getElementById('btnTake').onclick = () => takeDiscard();
+document.getElementById('btnKnock').onclick = () => knockTable();
+document.getElementById('btn31').onclick = () => declare31();
+
+// ---------- Acciones del jugador ----------
+function drawFromDeck() {
+  const p = state.players[state.currentPlayer];
+  if (state.deck.length === 0) {
+    if (state.discard.length <= 1) {
+      showToast('No quedan cartas');
+      return;
+    }
+    const top = state.discard.pop();
+    state.deck = shuffle(state.discard);
+    state.discard = [top];
+  }
+  const card = state.deck.pop();
+  p.hand.push(card);
+  state.pendingDraw = 'deck';
+  renderAll();
+  if (p.isHuman) {
+    showToast(' Robaste del mazo<br><small>Selecciona una carta para descartar</small>');
+  } else {
+    setTimeout(() => botDiscard(state.currentPlayer), 800);
+  }
+}
+
+function takeDiscard() {
+  const p = state.players[state.currentPlayer];
+  const card = state.discard.pop();
+  p.hand.push(card);
+  state.pendingDraw = 'discard';
+  renderAll();
+  if (p.isHuman) {
+    showToast('🂱 Tomaste del descarte<br><small>Selecciona una carta para descartar</small>');
+  } else {
+    setTimeout(() => botDiscard(state.currentPlayer), 800);
+  }
+}
+
+function discardSelected(idx) {
+  const p = state.players[state.currentPlayer];
+  if (idx < 0 || idx >= p.hand.length) return;
+  const card = p.hand.splice(idx, 1)[0];
+  state.discard.push(card);
+  state.pendingDraw = null;
+  state.selectedCardIdx = -1;
+
+  if (p.hand.length === 3 && isThirtyOne(p.hand)) {
+    renderAll();
+    setTimeout(() => declare31For(p, state.currentPlayer), 500);
+    return;
+  }
+  renderAll();
+  nextTurn();
+}
+
+function knockTable() {
+  const p = state.players[state.currentPlayer];
+  p.knocked = true;
+  state.knockedBy = state.currentPlayer;
+  state.lastTurnAfterKnock = countActivePlayers() - 1;
+  state.turnCountAfterKnock = 0;
+  showToast(`✊ <b>${p.name}</b> tocó la mesa`, 1500);
+  renderAll();
+  setTimeout(() => nextTurn(), 1500);
+}
+
+function declare31() {
+  const p = state.players[state.currentPlayer];
+  declare31For(p, state.currentPlayer);
+}
+
+function declare31For(p, idx) {
+  showToast(`¡¡¡ <b>${p.name}</b> tiene 31 !!!`, 2200);
+  setTimeout(() => endRound(idx), 2200);
+}
+
+function countActivePlayers() {
+  return state.players.filter(p => !p.eliminated).length;
+}
+
+// ---------- Turnos ----------
+function nextTurn() {
+  let next = (state.currentPlayer + 1) % state.numPlayers;
+  let safety = 0;
+  while (state.players[next].eliminated && safety < state.numPlayers) {
+    next = (next + 1) % state.numPlayers;
+    safety++;
+  }
+
+  if (state.knockedBy !== -1) {
+    state.turnCountAfterKnock++;
+    if (state.turnCountAfterKnock >= state.lastTurnAfterKnock) {
+      setTimeout(() => revealAll(), 600);
+      return;
+    }
+  }
+
+  state.currentPlayer = next;
+  renderAll();
+  processTurn();
+}
+
+function processTurn() {
+  const p = state.players[state.currentPlayer];
+  if (p.eliminated) { nextTurn(); return; }
+  if (p.knocked) { nextTurn(); return; }
+
+  showStatus(`Turno de ${p.name}`);
+
+  if (p.isHuman) {
+    setTimeout(hideStatus, 800);
+    updateActionButtons();
+  } else {
+    setTimeout(() => botPlay(state.currentPlayer), 1200);
+  }
+}
+
+// ---------- IA ----------
+function botPlay(idx) {
+  hideStatus();
+  const p = state.players[idx];
+  const sc = handScore(p.hand);
+
+  if (sc.score === 31) {
+    declare31For(p, idx);
+    return;
+  }
+
+  if (sc.score >= 28 && state.knockedBy === -1) {
+    knockTable();
+    return;
+  }
+
+  const topDiscard = state.discard[state.discard.length-1];
+  let takeDiscardOption = false;
+
+  if (topDiscard) {
+    const mySuits = {};
+    for (const c of p.hand) mySuits[c.suit] = (mySuits[c.suit]||0) + cardValue(c);
+    const newVal = (mySuits[topDiscard.suit]||0) + cardValue(topDiscard);
+    if (newVal > sc.score && newVal <= 31) {
+      takeDiscardOption = true;
+    }
+  }
+
+  if (takeDiscardOption && state.discard.length > 0) {
+    const card = state.discard.pop();
+    p.hand.push(card);
+    state.pendingDraw = 'discard';
+    renderAll();
+    setTimeout(() => botDiscard(idx), 700);
+  } else {
+    drawFromDeck();
+  }
+}
+
+function botDiscard(idx) {
+  const p = state.players[idx];
+  let worstIdx = 0;
+  let worstScore = Infinity;
+  for (let i=0;i<p.hand.length;i++) {
+    const remaining = p.hand.filter((_,j)=>j!==i);
+    const sc = handScore(remaining);
+    if (sc.score < worstScore) {
+      worstScore = sc.score;
+      worstIdx = i;
+    }
+  }
+  discardSelected(worstIdx);
+}
+
+// ---------- Revelar y fin de ronda ----------
+function revealAll() {
+  state.phase = 'reveal';
+  let html = '<h2>🎴 Revelando cartas</h2>';
+
+  const results = [];
+  state.players.forEach((p, i) => {
+    if (p.eliminated) return;
+    const sc = handScore(p.hand);
+    results.push({ idx:i, name:p.name, hand:p.hand, score:sc.score, label:sc.label });
+  });
+
+  const maxScore = Math.max(...results.map(r => r.score));
+  const minScore = Math.min(...results.map(r => r.score));
+  const roundLosers = results.filter(r => r.score === minScore);
+
+  let doubleLoser = null;
+  if (state.knockedBy !== -1) {
+    const knocker = results.find(r => r.idx === state.knockedBy);
+    if (knocker && knocker.score < maxScore) {
+      doubleLoser = knocker.idx;
+    }
+  }
+
+  html += '<div style="margin:12px 0;">';
+  results.forEach(r => {
+    const cards = r.hand.map(c => renderCardHTML(c, true)).join('');
+    const isWinner = r.score === maxScore;
+    html += `
+      <div style="margin-bottom:10px; padding:8px; background:rgba(255,255,255,${isWinner?0.15:0.05}); border-radius:10px; ${isWinner?'border:1px solid #ffd700;':''}">
+        <div style="font-weight:700; font-size:13px;">${r.name} ${isWinner?'👑':''}</div>
+        <div style="display:flex; gap:3px; justify-content:center; margin:6px 0;">${cards}</div>
+        <div style="font-size:12px; color:#ffd700;">${r.score} pts — ${r.label}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  html += `<p style="font-size:13px;">`;
+  if (roundLosers.length === results.length) {
+    html += `Empate general. Nadie pierde vida esta ronda.`;
+  } else {
+    html += `Pierden vida: <b>${roundLosers.map(r=>r.name).join(', ')}</b>`;
+    if (doubleLoser !== null && roundLosers.find(r=>r.idx===doubleLoser)) {
+      html += `<br><small style="color:#ff6b6b;">${results.find(r=>r.idx===doubleLoser).name} tocó mesa sin tener la mejor mano → ¡pierde 2 vidas!</small>`;
+    }
+  }
+  html += `</p>`;
+  html += `<button class="btn" onclick="applyRoundResult()">Continuar</button>`;
+
+  state._roundLosers = roundLosers.map(r => r.idx);
+  state._doubleLoser = doubleLoser;
+
+  showModal(html);
+}
+
+window.applyRoundResult = function() {
+  const losers = state._roundLosers || [];
+  const doubleLoser = state._doubleLoser;
+
+  const humansLost = [];
+  for (const idx of losers) {
+    const p = state.players[idx];
+    let loss = 1;
+    if (idx === doubleLoser) loss = 2;
+    p.lives -= loss;
+    if (p.lives < 0) p.lives = 0;
+    if (p.lives === 0) p.eliminated = true;
+    if (p.isHuman) humansLost.push(loss);
+  }
+
+  hideModal();
+
+  if (humansLost.length > 0) {
+    const me = state.players[state.humanIndex];
+    if (me.lives === 0) {
+      showAdForRevive(() => {
+        me.lives = 1;
+        me.eliminated = false;
+        continueAfterRound();
+      }, () => {
+        checkGameOver();
+      });
+    } else {
+      showAdForExtraLife(() => {
+        me.lives += 1;
+        continueAfterRound();
+      }, () => {
+        continueAfterRound();
+      });
+    }
+  } else {
+    continueAfterRound();
+  }
+};
+
+function continueAfterRound() {
+  const active = state.players.filter(p => !p.eliminated);
+  if (active.length <= 1) {
+    endGame(active[0]);
+    return;
+  }
+  state.round++;
+  state.phase = 'playing';
+  startRound();
+}
+
+function endRound(winnerIdx) {
+  state.phase = 'reveal';
+  const p = state.players[winnerIdx];
+
+  let html = `
+    <div class="result-icon">🏆</div>
+    <h2>¡${p.name} cantó 31!</h2>
+    <p>Todos los demás jugadores pierden 1 vida.</p>
+    <button class="btn" onclick="apply31Result(${winnerIdx})">Continuar</button>
+  `;
+  state._31Winner = winnerIdx;
+  showModal(html);
+}
+
+window.apply31Result = function(winnerIdx) {
+  hideModal();
+  let humanLost = false;
+  state.players.forEach((p, i) => {
+    if (i === winnerIdx || p.eliminated) return;
+    p.lives -= 1;
+    if (p.lives < 0) p.lives = 0;
+    if (p.lives === 0) p.eliminated = true;
+    if (p.isHuman && p.lives === 0) humanLost = true;
+  });
+
+  if (humanLost) {
+    const me = state.players[state.humanIndex];
+    showAdForRevive(() => {
+      me.lives = 1;
+      me.eliminated = false;
+      continueAfterRound();
+    }, () => {
+      checkGameOver();
+    });
+  } else {
+    continueAfterRound();
+  }
+};
+
+function checkGameOver() {
+  const me = state.players[state.humanIndex];
+  const active = state.players.filter(p => !p.eliminated);
+  if (active.length <= 1) {
+    endGame(active[0]);
+  } else if (me.eliminated) {
+    endGame(null, true);
+  } else {
+    continueAfterRound();
+  }
+}
+
+function endGame(winner, humanEliminated=false) {
+  let html;
+  if (humanEliminated) {
+    html = `
+      <div class="result-icon"></div>
+      <h2>Partida terminada</h2>
+      <p>Te has quedado sin vidas.<br>¡Mejor suerte la próxima!</p>
+      <button class="btn" onclick="backToStart()">🔄 Nueva partida</button>
+    `;
+  } else if (winner && winner.isHuman) {
+    html = `
+      <div class="result-icon">🏆</div>
+      <h2>¡GANASTE!</h2>
+      <p>¡Eres el último jugador en pie!</p>
+      <button class="btn" onclick="backToStart()">🔄 Jugar de nuevo</button>
+    `;
+  } else {
+    html = `
+      <div class="result-icon">🎴</div>
+      <h2>Partida terminada</h2>
+      <p>${winner ? `<b>${winner.name}</b> ha ganado la partida.` : 'No hubo ganador.'}</p>
+      <button class="btn" onclick="backToStart()">🔄 Nueva partida</button>
+    `;
+  }
+  showModal(html);
+}
+
+window.backToStart = function() {
+  hideModal();
+  document.getElementById('gameScreen').classList.add('hidden');
+  document.getElementById('startScreen').classList.remove('hidden');
+  state.phase = 'setup';
+};
+
+// ---------- Modal ----------
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function hideModal() {
+  document.getElementById('modal').classList.add('hidden');
+}
+
+// ============================================================
+// ANUNCIOS MONETAG (con modo de prueba para localhost)
+// ============================================================
+
+function showMonetagAd(onComplete, onError) {
+  // Modo prueba en localhost
+  if (isLocalhost()) {
+    console.log(' MODO PRUEBA: Anuncio simulado (Monetag no disponible en local)');
+    setTimeout(() => {
+      alert('🧪 MODO PRUEBA: Anuncio simulado completado');
+      onComplete();
+    }, 500);
+    return;
+  }
+  
+  // Producción: usar Monetag real
+  if (typeof show_12015566 !== 'undefined') {
+    show_12015566()
+      .then(() => {
+        console.log('✅ Anuncio Monetag completado');
+        onComplete();
+      })
+      .catch((err) => {
+        console.error('❌ Error Monetag:', err);
+        if (onError) onError();
+        else onComplete(); // Fallback: continuar igual
+      });
+  } else {
+    console.warn('⚠️ SDK Monetag no cargado');
+    if (onError) onError();
+    else onComplete();
+  }
+}
+
+// Anuncio inicial (3 vidas gratis)
+function showInitialAd(callback) {
+  const html = `
+    <h2> ¡Bienvenido!</h2>
+    <p>Mira este breve anuncio y recibe <b>3 vidas gratis</b> para empezar a jugar.</p>
+    <button class="btn" onclick="watchInitialAd()">▶️ Ver anuncio</button>
+    <button class="btn secondary" style="margin-top:8px;" onclick="skipInitialAd()">Saltar</button>
+  `;
+  showModal(html);
+  
+  window.watchInitialAd = function() {
+    showMonetagAd(() => {
+      hideModal();
+      callback();
+    });
+  };
+  
+  window.skipInitialAd = function() {
+    hideModal();
+    callback();
+  };
+}
+
+// Anuncio para revivir (0 vidas)
+function showAdForRevive(onSuccess, onSkip) {
+  const html = `
+    <h2>💔 ¡Has perdido todas tus vidas!</h2>
+    <p>Mira este anuncio para <b>recuperar 1 vida</b> y seguir jugando.</p>
+    <button class="btn" onclick="watchReviveAd()">▶️ Ver anuncio</button>
+    <button class="btn secondary" style="margin-top:8px;" onclick="skipReviveAd()">No gracias</button>
+  `;
+  showModal(html);
+  
+  window.watchReviveAd = function() {
+    showMonetagAd(() => {
+      hideModal();
+      onSuccess();
+    });
+  };
+  
+  window.skipReviveAd = function() {
+    hideModal();
+    onSkip();
+  };
+}
+
+// Anuncio para recuperar vida (pierdes 1 pero te quedan)
+function showAdForExtraLife(onSuccess, onSkip) {
+  const html = `
+    <h2>💫 ¡Has perdido una vida!</h2>
+    <p>Mira este anuncio para <b>recuperar la vida perdida</b>.</p>
+    <button class="btn" onclick="watchExtraLifeAd()">▶️ Ver anuncio</button>
+    <button class="btn secondary" style="margin-top:8px;" onclick="skipExtraLifeAd()">Saltar</button>
+  `;
+  showModal(html);
+  
+  window.watchExtraLifeAd = function() {
+    showMonetagAd(() => {
+      hideModal();
+      onSuccess();
+    });
+  };
+  
+  window.skipExtraLifeAd = function() {
+    hideModal();
+    onSkip();
+  };
+}
+
+// ---------- Inicio ----------
+renderStartScreen();
+setTimeout(() => {
+  showInitialAd(() => {
+    // Ya tiene 3 vidas por defecto
+  });
+}, 300);
+
+</script>
+</body>
+</html>
