@@ -5,6 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>El 31 - Baraja Española</title>
+  
+  <!-- Meta Tags para vista previa en Telegram y Redes Sociales -->
+  <meta property="og:title" content="El 31 - Baraja Española">
+  <meta property="og:description" content="¡Juega al clásico 31 con baraja española en Telegram! Suma 31 puntos, toca la mesa y gana.">
+  <meta property="og:image" content="https://antonioitriago.github.io/31-con-cartas-espa-olas/banner.jpg">
+  <meta property="og:url" content="https://antonioitriago.github.io/31-con-cartas-espa-olas/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <!-- SDK OFICIAL DE MONETAG -->
   <script src='//libtl.com/sdk.js' data-zone='12015566' data-sdk='show_12015566'></script>
@@ -363,7 +372,7 @@ function isLocalhost() {
 
 // ---------- Estado global ----------
 const SUITS = ['oro','copa','espada','basto'];
-const SUIT_SYMBOL = { oro:'🟡', copa:'🏆', espada:'⚔️', basto:'' };
+const SUIT_SYMBOL = { oro:'', copa:'🏆', espada:'️', basto:'🌿' };
 const SUIT_NAME = { oro:'Oros', copa:'Copas', espada:'Espadas', basto:'Bastos' };
 const RANK_NAMES = {1:'As',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',10:'Sota',11:'Caballo',12:'Rey'};
 const RANK_POINTS = {1:11, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 10:10, 11:10, 12:10};
@@ -700,7 +709,7 @@ function drawFromDeck() {
   state.pendingDraw = 'deck';
   renderAll();
   if (p.isHuman) {
-    showToast(' Robaste del mazo<br><small>Selecciona una carta para descartar</small>');
+    showToast('🂠 Robaste del mazo<br><small>Selecciona una carta para descartar</small>');
   } else {
     setTimeout(() => botDiscard(state.currentPlayer), 800);
   }
@@ -742,7 +751,7 @@ function knockTable() {
   state.knockedBy = state.currentPlayer;
   state.lastTurnAfterKnock = countActivePlayers() - 1;
   state.turnCountAfterKnock = 0;
-  showToast(`✊ <b>${p.name}</b> tocó la mesa`, 1500);
+  showToast(` <b>${p.name}</b> tocó la mesa`, 1500);
   renderAll();
   setTimeout(() => nextTurn(), 1500);
 }
@@ -1014,7 +1023,7 @@ function endGame(winner, humanEliminated=false) {
   let html;
   if (humanEliminated) {
     html = `
-      <div class="result-icon"></div>
+      <div class="result-icon">😢</div>
       <h2>Partida terminada</h2>
       <p>Te has quedado sin vidas.<br>¡Mejor suerte la próxima!</p>
       <button class="btn" onclick="backToStart()">🔄 Nueva partida</button>
@@ -1090,7 +1099,7 @@ function showMonetagAd(onComplete, onError) {
 // Anuncio inicial (3 vidas gratis)
 function showInitialAd(callback) {
   const html = `
-    <h2> ¡Bienvenido!</h2>
+    <h2>🎁 ¡Bienvenido!</h2>
     <p>Mira este breve anuncio y recibe <b>3 vidas gratis</b> para empezar a jugar.</p>
     <button class="btn" onclick="watchInitialAd()">▶️ Ver anuncio</button>
     <button class="btn secondary" style="margin-top:8px;" onclick="skipInitialAd()">Saltar</button>
